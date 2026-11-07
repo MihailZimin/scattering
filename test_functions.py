@@ -61,6 +61,18 @@ def plot_intensity_by_angle_theta(mie: Coefficients):
     plt.show()
 
 
+def calculate_extinction_cross_section(mie: Coefficients):
+    a_coeffs, b_coeffs = mie.get_ab()
+    k = mie.k_
+
+    n = np.arange(1, len(a_coeffs) + 1)
+    n_array = 2 * n + 1
+
+    coeff = 2 * np.pi / (k ** 2)
+
+    return coeff * np.sum(n_array * np.real(a_coeffs + b_coeffs))
+
+
 def calculate_scattering_cross_section(mie: Coefficients):
     a_coeffs, b_coeffs = mie.get_ab()
     k = mie.k_
@@ -81,9 +93,9 @@ def plot_scattering_cross_section_normalized_change_radius():
     # n_part = 0.54 + 2.23j
     n_part = 1.33 + 0.0j
     lmbda = 532e-9  
-    radius = 50e-9  
+    radius = 50e-9
 
-    radiuses = np.linspace(radius, radius + 1e-5, 2000)
+    radiuses = np.linspace(radius, radius + 1e-5, 10000)
 
     x_vals = np.zeros(len(radiuses))
     c_sca = np.zeros(len(radiuses))
@@ -94,7 +106,9 @@ def plot_scattering_cross_section_normalized_change_radius():
         c_sca[i] = calculate_scattering_cross_section(mie)
 
     q_sca = c_sca / np.pi / (radiuses ** 2)
-    
+    indmax = np.argmax(q_sca)
+    r_max = radiuses[indmax]
+    print(r_max)
     plt.figure(figsize=(8, 5))
     plt.plot(x_vals, q_sca, label='$C_{sca}$', color='crimson')
     plt.xlabel('Параметр размера $x = 2\pi n_{med} a / \lambda_0$')
@@ -102,12 +116,14 @@ def plot_scattering_cross_section_normalized_change_radius():
     plt.grid(True, linestyle='--')
     # plt.yscale('log')
     plt.title('Зависимость эффективности рассеяния Ми от размера частицы')
+    plt.savefig('results/scattering_efficiency_radius_var.png')
     plt.show()
 
 
 def plot_scattering_cross_section_normalized_change_lambda():
     water = ri.RefractiveIndexMaterial(shelf='main', book='H2O', page='Segelstein')
-    wave_steps = np.linspace(100, 10000, 10000)
+    # water = ri.RefractiveIndexMaterial(shelf='main', book='H2O', page='Hale')
+    wave_steps = np.linspace(100, 10000, 100000)
     refraction_coeffs = water.get_refractive_index(wave_steps)
     extinction_coeffs = water.get_extinction_coefficient(wave_steps)
 
@@ -129,8 +145,43 @@ def plot_scattering_cross_section_normalized_change_lambda():
     plt.plot(1/(wave_steps * 0.001), q_sca, label='$Q_{sca}$', color='crimson')
     # plt.xlabel('Параметр размера $x = 2\pi n_{med} a / \lambda$')
     plt.xlabel('Параметр $1 / \lambda$')
-    plt.ylabel('Эффективность экстинкции $Q_{sca}$')
+    plt.ylabel('Эффективность рассеяния $Q_{sca}$')
     plt.grid(True, linestyle='--')
     # plt.yscale('log')
-    plt.title('Зависимость сечения рассеяния Ми от длины падающей волны на водяную каплю')
+    plt.title('Зависимость эффективности рассеяния Ми от длины падающей волны на водяную каплю')
+    plt.savefig('results/scattering_efficiency_lambda_var.png')
+    plt.show()
+
+
+
+def plot_extinction_cross_section_normalized_change_lambda():
+    water = ri.RefractiveIndexMaterial(shelf='main', book='H2O', page='Segelstein')
+    # water = ri.RefractiveIndexMaterial(shelf='main', book='H2O', page='Hale')
+    wave_steps = np.linspace(100, 100000, 500000)
+    refraction_coeffs = water.get_refractive_index(wave_steps)
+    extinction_coeffs = water.get_extinction_coefficient(wave_steps)
+
+    n_vals = refraction_coeffs + 1j * extinction_coeffs
+    n_medium = 1.0 + 0.0j
+    radius = 1*1e-6
+
+    x_vals = np.zeros_like(n_vals)
+    c_ext = np.zeros_like(n_vals)
+
+    for i, n_particle in enumerate(n_vals):
+        mie = Coefficients(n_medium, n_particle, wave_steps[i] * 1e-9, radius)
+        x_vals[i] = mie.x_
+        c_ext[i] = calculate_extinction_cross_section(mie)
+
+    q_ext = c_ext / np.pi / (radius ** 2)
+    
+    plt.figure(figsize=(8, 5))
+    plt.plot(1/(wave_steps * 0.001), q_ext, label='$Q_{ext}$', color='crimson')
+    # plt.xlabel('Параметр размера $x = 2\pi n_{med} a / \lambda$')
+    plt.xlabel('Параметр $1 / \lambda$')
+    plt.ylabel('Эффективность экстинкции $Q_{ext}$')
+    plt.grid(True, linestyle='--')
+    # plt.yscale('log')
+    plt.title('Зависимость эффективности экстинкции Ми от длины падающей волны на водяную каплю')
+    plt.savefig('results/extinction_efficiency_lambda_var.png')
     plt.show()

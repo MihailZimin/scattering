@@ -8,8 +8,9 @@ if __name__ == "__main__":
     n_medium = 1
     radius = 0.26 * 1e-6
 
-    # mie = Coefficients(n_medium, n_particle, lmbda, radius)
-    # print(mie.x_)
+    mie = Coefficients(n_medium, n_particle, lmbda, radius)
+    print(mie.x_)
     # plot_intensity_by_angle_theta(mie)
     # plot_scattering_cross_section_normalized_change_radius()
     # plot_scattering_cross_section_normalized_change_lambda()
+    plot_extinction_cross_section_normalized_change_lambda()
